@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Swap</title>
+</head>
+<body>
+    <form id="face-swap-form">
+        <input type="text" id="target_url" name="target_url" placeholder="Target URL" required>
+        <input type="text" id="swap_url" name="swap_url" placeholder="Swap URL" required>
+        <button type="submit">Swap Faces</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('face-swap-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const targetUrl = document.getElementById('target_url').value;
+            const swapUrl = document.getElementById('swap_url').value;
+
+            if (!targetUrl || !swapUrl) {
+                alert('Both target_url and swap_url are required.');
+                return;
+            }
+
+            const payload = `target_url=${encodeURIComponent(targetUrl)}&swap_url=${encodeURIComponent(swapUrl)}`;
+            
+            fetch('https://api.magicapi.dev/api/v1/capix/faceswap/faceswap/v1/image', {
+                method: 'POST',
+                headers: {
+                    'x-magicapi-key': 'cm15ia7rv0008mn03pg2jdro6',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: payload
+            })
+            .then(response => response.json())
+            .then(data => {
+                const requestId = data.image_process_response.request_id;
+                if (requestId) {
+                    checkResult(requestId);
+                } else {
+                    alert('Failed to get request_id from the API response.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+        function checkResult(requestId) {
+            setTimeout(() => {
+                const payload = `request_id=${requestId}`;
+                
+                fetch('https://api.magicapi.dev/api/v1/capix/faceswap/result/', {
+                    method: 'POST',
+                    headers: {
+                        'x-magicapi-key': 'cm15ia7rv0008mn03pg2jdro6',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: payload
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const resultUrl = data.image_process_response.result_url;
+                    if (resultUrl) {
+                        document.getElementById('result').innerHTML = `<img src="${resultUrl}" alt="Face Swap Result">`;
+                    } else {
+                        alert('Failed to get result_url from the API response.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
